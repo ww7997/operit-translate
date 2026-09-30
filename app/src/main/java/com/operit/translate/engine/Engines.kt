@@ -16,17 +16,50 @@ object GoogleFreeEngine : TranslateEngine {
 
     override fun translate(text: String, from: String, to: String, key: String, endpoint: String, model: String): String {
         val sl = if (from == "auto") "auto" else from
-        val url = "https://translate.googleapis.com/translate_a/single" +
-            "?client=gtx&sl=$sl&tl=$to&dt=t&q=${URLEncoder.encode(text, "UTF-8")}"
-        val resp = Http.get(url)
-        val arr = JSONArray(resp)
-        val segs = arr.optJSONArray(0) ?: return ""
-        val sb = StringBuilder()
-        for (i in 0 until segs.length()) {
-            val seg = segs.optJSONArray(i) ?: continue
-            sb.append(seg.optString(0))
+        val q = URLEncoder.encode(text, "UTF-8")
+        val hosts = listOf(
+            "https://clients5.google.com/translate_a/t?client=dict-chrome-ex&sl=$sl&tl=$to&q=$q",
+            "https://translate.google.com/translate_a/single?client=gtx&sl=$sl&tl=$to&dt=t&q=$q",
+            "https://translate.googleapis.com/translate_a/single?client=gtx&sl=$sl&tl=$to&dt=t&q=$q"
+        )
+        var lastErr = ""
+        for (url in hosts) {
+            try {
+                val resp = Http.get(url, mapOf(
+                    "User-Agent" to "Mozilla/5.0 (Linux; Android 13) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Mobile Safari/537.36"
+                ))
+                if (resp.isBlank() || resp.startsWith("<")) { lastErr = "محجوب"; continue }
+                val out = parse(resp)
+                if (out.isNotBlank()) return out
+            } catch (e: Exception) {
+                lastErr = e.message ?: "خطأ"
+            }
         }
-        return sb.toString()
+        throw TranslateException("Google المجاني غير متاح حالياً ($lastErr). جرّب محركاً آخر من الإعدادات أو حط مفتاحك.")
+    }
+
+    private fun parse(resp: String): String {
+        // clients5 (dict-chrome-ex) format: [[["ترجمة","أصل",...]],...] أو ["ترجمة",...]
+        val t = resp.trim()
+        return try {
+            if (t.startsWith("[")) {
+                val arr = JSONArray(t)
+                // جرّب النمط الكلاسيكي أولاً
+                val first = arr.opt(0)
+                if (first is JSONArray) {
+                    val segs = first as JSONArray
+                    val sb = StringBuilder()
+                    for (i in 0 until segs.length()) {
+                        val seg = segs.optJSONArray(i) ?: continue
+                        sb.append(seg.optString(0))
+                    }
+                    if (sb.isNotBlank()) return sb.toString()
+                }
+                // نمط clients5: ["ترجمة", "أصل", ...]
+                if (first is String) return first
+                ""
+            } else ""
+        } catch (e: Exception) { "" }
     }
 }
 

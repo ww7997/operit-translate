@@ -11,7 +11,7 @@ import com.operit.translate.engine.TranslateEngine
  */
 data class Config(
     // ==== المحرك ====
-    val engineId: String = "google_free",
+    val engineId: String = "mymemory",
     val apiKey: String = "",
     val endpoint: String = "",
     val model: String = "",
