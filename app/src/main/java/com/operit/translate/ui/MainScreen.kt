@@ -47,16 +47,21 @@ fun MainScreen() {
             NavigationBar(containerColor = CARD) {
                 NavigationBarItem(
                     selected = tab == 0, onClick = { tab = 0 },
+                    icon = { Text("🌐", fontSize = 20.sp) },
+                    label = { Text("متصفح") }
+                )
+                NavigationBarItem(
+                    selected = tab == 1, onClick = { tab = 1 },
                     icon = { Text("📝", fontSize = 20.sp) },
                     label = { Text("نص") }
                 )
                 NavigationBarItem(
-                    selected = tab == 1, onClick = { tab = 1 },
+                    selected = tab == 2, onClick = { tab = 2 },
                     icon = { Text("📚", fontSize = 20.sp) },
                     label = { Text("مستندات") }
                 )
                 NavigationBarItem(
-                    selected = tab == 2, onClick = { tab = 2 },
+                    selected = tab == 3, onClick = { tab = 3 },
                     icon = { Text("⚙️", fontSize = 20.sp) },
                     label = { Text("إعدادات") }
                 )
@@ -65,8 +70,9 @@ fun MainScreen() {
     ) { pad ->
         Box(Modifier.padding(pad).fillMaxSize()) {
             when (tab) {
-                0 -> TextTab(cfg) { cfg = it }
-                1 -> DocsTab(cfg)
+                0 -> BrowserTab(cfg)
+                1 -> TextTab(cfg) { cfg = it }
+                2 -> DocsTab(cfg)
                 else -> SettingsTab(cfg) { cfg = it }
             }
         }
@@ -379,7 +385,7 @@ private fun SettingsTab(cfg: Config, onCfg: (Config) -> Unit) {
         }
 
         /* ---- الموديل ---- */
-        if (eng.id.startsWith("openai")) {
+        if (com.operit.translate.engine.EngineRegistry.isAi(eng.id)) {
             Text("اسم الموديل", color = TXT, fontWeight = FontWeight.Bold)
             Spacer(Modifier.height(6.dp))
             OutlinedTextField(
@@ -458,6 +464,44 @@ private fun SettingsTab(cfg: Config, onCfg: (Config) -> Unit) {
                 label = { Text("ترجمة فقط") }
             )
         }
+
+        Spacer(Modifier.height(14.dp))
+        Text("الترجمة التلقائية", color = TXT, fontWeight = FontWeight.Bold)
+        Spacer(Modifier.height(4.dp))
+        Text("لو مفعّلة: كل صفحة تفتحها بالمتصفح الداخلي تترجم لحالها. الافتراضي: معطّلة.",
+            color = Color(0xFF9AA6B2), fontSize = 11.sp)
+        Spacer(Modifier.height(6.dp))
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            Switch(
+                checked = cfg.autoTranslate,
+                onCheckedChange = { v ->
+                    val nc = cfg.copy(autoTranslate = v); Config.save(ctx, nc); onCfg(nc)
+                }
+            )
+            Spacer(Modifier.width(10.dp))
+            Text(if (cfg.autoTranslate) "مفعّلة" else "معطّلة (موصى به)", color = TXT, fontSize = 13.sp)
+        }
+
+        Spacer(Modifier.height(14.dp))
+        Text("برومبت الترجمة (للنماذج الذكية)", color = TXT, fontWeight = FontWeight.Bold)
+        Spacer(Modifier.height(4.dp))
+        Text("متغيّرات: {from} = اللغة المصدر، {to} = اللغة الهدف. اتركه فارغاً للافتراضي.",
+            color = Color(0xFF9AA6B2), fontSize = 11.sp)
+        Spacer(Modifier.height(6.dp))
+        OutlinedTextField(
+            value = cfg.prompt,
+            onValueChange = { val nc = cfg.copy(prompt = it); Config.save(ctx, nc); onCfg(nc) },
+            modifier = Modifier.fillMaxWidth().heightIn(min = 96.dp),
+            placeholder = { Text(com.operit.translate.engine.EngineUtil.DEFAULT_PROMPT, fontSize = 12.sp, color = Color(0xFF6A7480)) },
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedTextColor = TXT, unfocusedTextColor = TXT
+            )
+        )
+        Spacer(Modifier.height(6.dp))
+        OutlinedButton(onClick = {
+            val nc = cfg.copy(prompt = com.operit.translate.engine.EngineUtil.DEFAULT_PROMPT)
+            Config.save(ctx, nc); onCfg(nc)
+        }) { Text("استخدم البرومبت الافتراضي") }
 
         Spacer(Modifier.height(18.dp))
         OutlinedButton(

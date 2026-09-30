@@ -29,6 +29,12 @@ data class Config(
     // ==== التخزين المؤقت ====
     val cacheEnabled: Boolean = true,
 
+    // ==== برومبت الذكاء الاصطناعي (قابل للتحرير) ====
+    val prompt: String = "",
+
+    // ==== المتصفح ====
+    val autoTranslate: Boolean = false,
+
     // ==== الترجمة الفورية ====
     val pageSize: Int = 15,
 
@@ -55,6 +61,8 @@ data class Config(
                 targetLang = p.getString("key_tgt", d.targetLang) ?: d.targetLang,
                 displayMode = p.getString("key_display", d.displayMode) ?: d.displayMode,
                 cacheEnabled = p.getBoolean("key_cache", d.cacheEnabled),
+                prompt = p.getString("key_prompt", d.prompt) ?: d.prompt,
+                autoTranslate = p.getBoolean("key_autotrans", d.autoTranslate),
                 pageSize = p.getInt("key_pagesize", d.pageSize),
                 audioSource = p.getString("key_audio", d.audioSource) ?: d.audioSource,
                 overlayEnabled = p.getBoolean("key_overlay", d.overlayEnabled)
@@ -71,6 +79,8 @@ data class Config(
                 putString("key_tgt", c.targetLang)
                 putString("key_display", c.displayMode)
                 putBoolean("key_cache", c.cacheEnabled)
+                putString("key_prompt", c.prompt)
+                putBoolean("key_autotrans", c.autoTranslate)
                 putInt("key_pagesize", c.pageSize)
                 putString("key_audio", c.audioSource)
                 putBoolean("key_overlay", c.overlayEnabled)

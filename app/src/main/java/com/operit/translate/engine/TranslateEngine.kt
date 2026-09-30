@@ -19,6 +19,7 @@ interface TranslateEngine {
         key: String,
         endpoint: String,
         model: String,
+        prompt: String = "",
     ): String
 }
 
@@ -31,6 +32,20 @@ object EngineUtil {
         .trim()
         .trim('"')
         .trim()
+
+    /** البرومبت الافتراضي للترجمة عبر نماذج الذكاء الاصطناعي. */
+    const val DEFAULT_PROMPT =
+        "You are a professional translator. Translate the user's text from {from} into {to}. " +
+        "Output ONLY the translation, without any explanation, notes, or quotes. " +
+        "Preserve the paragraph and line structure exactly. Keep names, brands, code, and URLs unchanged."
+
+    /** يبني البرومبت النهائي: يستخدم prompt المستخدم إن وُجد، وإلا الافتراضي، مع استبدال {from}/{to}. */
+    fun buildPrompt(prompt: String, from: String, to: String): String {
+        val base = prompt.ifBlank { DEFAULT_PROMPT }
+        return base
+            .replace("{from}", langName(from))
+            .replace("{to}", langName(to))
+    }
 
     val LANG_NAMES: Map<String, String> = mapOf(
         "auto" to "auto-detect",

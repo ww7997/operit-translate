@@ -21,7 +21,7 @@ object Translator {
     fun clearCache() = cache.clear()
 
     private fun cacheKey(cfg: Config, text: String) =
-        "${cfg.engineId}|${cfg.sourceLang}|${cfg.targetLang}|${text.hashCode()}"
+        "${cfg.engineId}|${cfg.sourceLang}|${cfg.targetLang}|${cfg.model}|${cfg.prompt.hashCode()}|${text.hashCode()}"
 
     fun translate(cfg: Config, text: String): String {
         if (text.isBlank()) return ""
@@ -41,7 +41,8 @@ object Translator {
             cfg.targetLang,
             cfg.apiKey,
             cfg.endpoint,
-            cfg.model
+            cfg.model,
+            cfg.prompt
         )
         if (r.isBlank()) throw TranslateException("المحرك أرجع نتيجة فارغة")
         return EngineUtil.clean(r)
@@ -101,7 +102,8 @@ object Translator {
                 cfg.targetLang,
                 cfg.apiKey,
                 cfg.endpoint,
-                cfg.model
+                cfg.model,
+                cfg.prompt
             )
             Pair(true, out)
         } catch (e: Exception) {
