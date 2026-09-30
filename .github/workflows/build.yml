@@ -1,0 +1,72 @@
+name: Build APK
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.7'
+
+      - name: Build debug APK
+        id: build
+        run: |
+          set -o pipefail
+          gradle :app:assembleDebug --no-daemon --stacktrace 2>&1 | tee /tmp/build.log
+
+      - name: Collect APK
+        if: success()
+        run: |
+          mkdir -p out
+          cp app/build/outputs/apk/debug/app-debug.apk out/OperitTranslate.apk
+          ls -lh out/
+
+      - name: Upload artifact
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: OperitTranslate-APK
+          path: out/*.apk
+          retention-days: 90
+
+      - name: Publish release
+        if: success()
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ github.run_number }}
+          name: Operit Translate — build ${{ github.run_number }}
+          body: |
+            APK جاهز للتنصيب. نزّله على أندرويد واضغط عليه.
+          files: out/*.apk
+
+      # عند الفشل: نحفظ سجل الخطأ داخل المستودع ليصبح قابلاً للقراءة من الخارج
+      - name: Save error log
+        if: failure()
+        run: |
+          { echo "=== BUILD FAILED — run ${{ github.run_number }} ==="; \
+            echo; grep -n "^e: \|error: \|FAILURE\|Caused by\|What went wrong\|> Task .* FAILED\|Could not\|Unresolved\|Execution failed" /tmp/build.log | tail -120; \
+            echo; echo "===== TAIL 200 ====="; tail -200 /tmp/build.log; } > build-error.txt || true
+          git config user.email "ci@users.noreply.github.com"
+          git config user.name "CI Bot"
+          git add -f build-error.txt
+          git commit -m "ci: build error log [skip ci]" || true
+          git push || true
