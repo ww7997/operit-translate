@@ -74,14 +74,14 @@ object ApiClient {
             put("model", cfg.mtModel)
             put("temperature", 0.2)
             put("stream", false)
-            putJSONArray("messages").apply {
-                put(JSONObject().apply {
-                    put("role", "system"); put("content", sys)
-                })
-                put(JSONObject().apply {
-                    put("role", "user"); put("content", text)
-                })
-            }
+            val msgs = JSONArray()
+            msgs.put(JSONObject().apply {
+                put("role", "system"); put("content", sys)
+            })
+            msgs.put(JSONObject().apply {
+                put("role", "user"); put("content", text)
+            })
+            put("messages", msgs)
         }
 
         val req = Request.Builder()

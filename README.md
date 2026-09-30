@@ -1,46 +1,40 @@
-# Operit Translate — مترجم فوري للفيديو والكلام
+# Operit Translate v2
 
-تطبيق أندرويد لترجمة الكلام والصوت بشكل فوري، مع طبقة عائمة فوق كل التطبيقات.
-**كل النماذج والـ APIs تختارها أنت من داخل التطبيق** — لا شيء مثبّت في الكود.
+مترجم أندرويد — نص + مستندات (TXT / MD / HTML / EPUB / PDF)، ست محركات، ومفتاح خاص اختياري.
 
-## المزايا
-- التقاط من **الميكروفون** و/أو **صوت النظام** (MediaProjection).
-- تحويل الكلام لنص (STT) عبر أي خدمة متوافقة مع OpenAI.
-- ترجمة (MT) عبر أي خدمة متوافقة مع OpenAI (chat/completions).
-- عرض النص الأصلي + الترجمة، مع طبقة عائمة (Overlay) فوق أي تطبيق.
-- كشف سكوت بسيط (VAD) لتقليل الطلبات.
+## الميزات
+- **6 محركات ترجمة** جاهزة، تختار واحد من الإعدادات:
+  - `Google (مجاني)` — بدون مفتاح
+  - `Bing (مجاني)` — بدون مفتاح
+  - `MyMemory (مجاني)` — بدون مفتاح
+  - `OpenAI متوافق` — مفتاح + endpoint + اسم موديل (Groq / OpenRouter / DeepSeek / أي API متوافق)
+  - `Google Gemini` — مفتاح
+  - `LibreTranslate` — endpoint (اختياري مفتاح)
+- **ترجمة نص** سريعة من تبويب «نص».
+- **ترجمة مستندات**: تختار ملف (TXT / Markdown / HTML / EPUB / PDF) ويترجمه فقرة فقرة مع شريط تقدّم.
+- **نمط العرض**: «أصل + ترجمة» (الترجمة تحت الأصل) أو «ترجمة فقط» — قابل للتغيير بأي وقت.
+- **تصدير**: TXT أو HTML ومشاركته من التطبيق.
+- كاش داخلي للترجمة قابل للتعطيل.
+
+## ملاحظات صريحة
+- استخراج النص من PDF يعتمد على Android PdfRenderer (يعمل مع PDF فيه طبقة نص). ملفات PDF المصوّرة (صورة فقط) تحتاج OCR.
+- ترجمة الفيديو/الصوت المباشر (YouTube/Netflix…) غير مدعومة بسبب DRM وحقوق البث؛ الاعتماد الأساسي هنا على النص والمستندات.
 
 ## البناء
 ```bash
-# افتح المجلد في Android Studio (Ladybug أو أحدث)، ثم:
-./gradlew assembleDebug
-# أو من Android Studio: Build > Build Bundle(s)/APK(s) > Build APK(s)
+export JAVA_HOME=/usr/lib/jvm/java-17-openjdk-arm64
+./gradlew :app:assembleDebug
+# الناتج: app/build/outputs/apk/debug/app-debug.apk
 ```
-الناتج: `app/build/outputs/apk/debug/app-debug.apk`
 
-## أول تشغيل
-1. افتح تبويب **الإعدادات**.
-2. أدخل:
-   - **STT**: Endpoint + Key + Model (افتراضياً OpenAI `whisper-1`).
-   - **MT**: Endpoint + Key + Model (افتراضياً OpenAI `gpt-4o-mini`).
-   - لغات المصدر/الهدف.
-   - **مصدر الصوت**: ميكروفون / صوت النظام / الاثنان.
-3. احفظ، ثم ارجع لتبويب **الترجمة** واضغط **بدء**.
+يتطلب Android SDK (android-34). على معالجات ARM استخدم aapt2 من Maven (انظر `gradle.properties`).
 
-## قيود مهمة (اقرأها)
-- **صوت النظام**: يعمل فقط مع التطبيقات التي تسمح بـ `allowAudioPlaybackCapture`.
-  يوتيوب ونتفليكس وسبوتيفاي **محجوبون** غالباً بسبب DRM. الحل العملي: شغّل الصوت على
-  السماعة واستخدم **الميكروفون**.
-- الطبقة العائمة تحتاج إذن `SYSTEM_ALERT_WINDOW`.
-- الترجمة الفورية تعتمد على سرعة الـ API — قد تكون هناك تأخيرة بسيطة.
-
-## الملفات الرئيسية
-- `audio/MicCapture.kt` — التقاط الميكروفون + VAD.
-- `audio/SystemAudioCapture.kt` — التقاط صوت النظام.
-- `net/ApiClient.kt` — STT + MT (متوافق OpenAI).
-- `service/CaptureService.kt` — الخط: صوت → نص → ترجمة → عرض.
-- `overlay/OverlayService.kt` — الطبقة العائمة.
-- `ui/MainScreen.kt` + `ui/SettingsScreen.kt` — الواجهة.
-
-> ملاحظة: راجع الكود وعدّل ما يلزم. أنا كتبت المشروع كاملاً لكن لم أبنِه/أختبره فعلياً
-> على جهاز — تحتاج تفتحه في Android Studio وتبنيه.
+## البنية
+```
+com.operit.translate
+├─ Config.kt              إعدادات + مفاتيح
+├─ Translator.kt          محرك الترجمة النصية (تقطيع + كاش)
+├─ engine/                المحركات الستة + السجل
+├─ doc/                   قراءة/كتابة/ترجمة المستندات
+└─ ui/MainScreen.kt       الواجهة (نص / مستندات / إعدادات)
+```
